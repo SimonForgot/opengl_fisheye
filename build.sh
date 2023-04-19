@@ -5,6 +5,7 @@ if [ -z "$1" ]; then
   cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug \
     -Dglfw3_DIR=/home/zhangxinlong/app/glfw3/lib/cmake/glfw3 \
     -DGLAD=/home/zhangxinlong/app/glad \
+    -Dglm_DIR=/home/zhangxinlong/app/glm/cmake/glm \
     -DCMAKE_INSTALL_PREFIX=$INSTALL_LOC
 
 elif [ $1 = "c" ]; then
