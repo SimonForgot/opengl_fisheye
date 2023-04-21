@@ -1,3 +1,4 @@
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 if [ -z "$1" ]; then
 
   rm -f ./build/CMakeCache.txt
@@ -6,6 +7,7 @@ if [ -z "$1" ]; then
     -Dglfw3_DIR=/home/zhangxinlong/app/glfw3/lib/cmake/glfw3 \
     -DGLAD=/home/zhangxinlong/app/glad \
     -Dglm_DIR=/home/zhangxinlong/app/glm/cmake/glm \
+    -Dassimp_DIR=/home/zhangxinlong/app/assimp/lib/cmake/assimp-4.0 \
     -DCMAKE_INSTALL_PREFIX=$INSTALL_LOC
 
 elif [ $1 = "c" ]; then
