@@ -60,73 +60,68 @@ int main()
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
-    std::vector<std::vector<float>> vertices;
-    vertices.push_back({0.5f, 0.5f, 0.5f,
-                        0.5f, -0.5f, 0.5f,
-                        -0.5f, -0.5f, 0.5f,
-                        -0.5f, 0.5f, 0.5f,
-                        0.5f, 0.5f, -0.5f,
-                        0.5f, -0.5f, -0.5f,
-                        -0.5f, -0.5f, -0.5f,
-                        -0.5f, 0.5f, -0.5f});
-    vertices.push_back({1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-                        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-                        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-                        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f});
-    std::vector<std::vector<unsigned int>> indices;
-    indices.push_back({0, 1, 3,
-                       1, 2, 3,
-                       0, 4, 5,
-                       5, 1, 0,
-                       4, 7, 5,
-                       5, 7, 6,
-                       7, 3, 6,
-                       3, 2, 6,
-                       7, 4, 0,
-                       7, 0, 3,
-                       2, 1, 6,
-                       1, 5, 6});
-    indices.push_back({0, 1, 3,
-                       1, 2, 3,
-                       0, 4, 5,
-                       5, 1, 0});
-
-    GLuint VBO[2], VAO[2], EBO[2];
-    glGenVertexArrays(2, VAO);
-    glGenBuffers(2, VBO);
-    glGenBuffers(2, EBO);
-    for (GLuint i = 0; i < 2; i++)
+    struct triangle_mesh_data
     {
-        glBindVertexArray(VAO[i]);
+        std::vector<GLfloat> vertices;
+        std::vector<GLuint> indices;
+        std::vector<GLfloat> uvs; // for visualizing quad only
+        GLuint VAO, VBO[2], EBO;
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO[i]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[i][0]) * vertices[i].size(), vertices[i].data(), GL_STATIC_DRAW);
-
-        if (i == 0)
+        void setupVAO()
         {
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-            glEnableVertexAttribArray(0);
+            // create
+            glCreateVertexArrays(1, &VAO);
+            glCreateBuffers(2, VBO);
+            glCreateBuffers(1, &EBO);
+            // move buffer data
+            glNamedBufferStorage(VBO[0], sizeof(GLfloat) * vertices.size(), vertices.data(), GL_DYNAMIC_STORAGE_BIT);
+            glNamedBufferStorage(EBO, sizeof(GLuint) * indices.size(), indices.data(), GL_DYNAMIC_STORAGE_BIT);
+            vertices.clear();
+            indices.clear();
+            // how to interpret the data storage in buffer
+            glVertexArrayVertexBuffer(VAO, 0, VBO[0], 0, sizeof(GLfloat) * 3);
+            glVertexArrayElementBuffer(VAO, EBO);
+            // specify how to fetch data from buffer to vertex shader
+            glVertexArrayAttribFormat(VAO, 0, 3, GL_FLOAT, GL_FALSE, 0);
+            glVertexArrayAttribBinding(VAO, 0, 0);
+            glEnableVertexArrayAttrib(VAO, 0);
+            if (!uvs.empty())
+            {
+                glNamedBufferStorage(VBO[1], sizeof(GLfloat) * uvs.size(), uvs.data(), GL_DYNAMIC_STORAGE_BIT);
+                uvs.clear();
+                glVertexArrayVertexBuffer(VAO, 1, VBO[1], 0, sizeof(GLfloat) * 2);
+                glVertexArrayAttribFormat(VAO, 1, 2, GL_FLOAT, GL_FALSE, 0);
+                glVertexArrayAttribBinding(VAO, 1, 1);
+                glEnableVertexArrayAttrib(VAO, 1);
+            }
         }
-        else
-        {
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
-            glEnableVertexAttribArray(1);
-        }
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[i]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[i][0]) * indices[i].size(), indices[i].data(), GL_STATIC_DRAW);
-    }
-    // unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    // EBO is recorded in VAO
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    } cube, quad;
+    cube.vertices = {0.5f, 0.5f, 0.5f,
+                     0.5f, -0.5f, 0.5f,
+                     -0.5f, -0.5f, 0.5f,
+                     -0.5f, 0.5f, 0.5f,
+                     0.5f, 0.5f, -0.5f,
+                     0.5f, -0.5f, -0.5f,
+                     -0.5f, -0.5f, -0.5f,
+                     -0.5f, 0.5f, -0.5f};
+    cube.indices = {0, 1, 3, 1, 2, 3,
+                    0, 4, 5, 5, 1, 0,
+                    4, 7, 5, 5, 7, 6,
+                    7, 3, 6, 3, 2, 6,
+                    7, 4, 0, 7, 0, 3,
+                    2, 1, 6, 1, 5, 6};
+    quad.vertices = {1.0f, 1.0f, 0.0f,
+                     1.0f, -1.0f, 0.0f,
+                     -1.0f, -1.0f, 0.0f,
+                     -1.0f, 1.0f, 0.0f};
+    quad.indices = {0, 1, 3, 1, 2, 3};
+    quad.uvs = {1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    cube.setupVAO();
+    quad.setupVAO();
 
     // 创建FBO
     GLuint fbo[6];
-    glGenFramebuffers(6, fbo);
+    glCreateFramebuffers(6, fbo);
     GLuint textures[6];
     glGenTextures(6, textures);
     GLuint rbo[6];
@@ -200,7 +195,7 @@ int main()
             model = glm::mat4(1.0f);
 
         // step 1
-        glBindVertexArray(VAO[0]);
+        glBindVertexArray(cube.VAO);
         // set mvp
         fishEyeShader.use();
         fishEyeShader.setMat4("model", model);
@@ -216,7 +211,7 @@ int main()
 
         // step 2
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glBindVertexArray(VAO[1]);
+        glBindVertexArray(quad.VAO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
@@ -254,14 +249,7 @@ int main()
         std::string filename = std::string{"output"} + std::to_string(i) + ".png";
         stbi_write_png(filename.c_str(), width, height, 4, pixels, 0);
     }
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(2, VAO);
-    glDeleteBuffers(2, VBO);
-    glDeleteBuffers(2, EBO);
 
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
