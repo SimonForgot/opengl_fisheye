@@ -10,7 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <learnopengl/shader_m.h>
+#include <learnopengl/shader.h>
 
 #include <vector>
 #include <iostream>
@@ -55,7 +55,7 @@ int main()
 
     // 1.generate 6 direction textures, merge into a cubemap
     // 2.use fisheye model to sample this cubemap
-    Shader fishEyeShader("../fishEyeShader.vs", "../fishEyeShader.fs");
+    Shader fishEyeShader("../fishEyeShader.vs", "../fishEyeShader.fs", "../fishEyeShader.gs");
     Shader viewShader("../viewShader.vs", "../viewShader.fs");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
@@ -120,43 +120,30 @@ int main()
     quad.setupVAO();
 
     // 创建FBO
-    GLuint fbo[6];
-    glCreateFramebuffers(6, fbo);
-    GLuint textures[6];
-    glGenTextures(6, textures);
-    GLuint rbo[6];
-    glGenRenderbuffers(6, rbo);
-    for (GLuint i = 0; i < 6; i++)
+    GLuint FBO;
+    glCreateFramebuffers(1, &FBO);
+
+    // in DSA,cubemap is a kind of array texture with 6 layer
+    GLuint colorBuffer;
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &colorBuffer);
+    glTextureStorage2D(colorBuffer, 1, GL_RGBA8, width, height); // one level, no mipmaps
+    glNamedFramebufferTexture(FBO, GL_COLOR_ATTACHMENT0, colorBuffer, 0);
+
+    GLuint depthBuffer;
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &depthBuffer);
+    glTextureStorage2D(depthBuffer, 1, GL_DEPTH24_STENCIL8, width, height);
+    glNamedFramebufferTexture(FBO, GL_DEPTH_ATTACHMENT, depthBuffer, 0);
+
+    // 检查FBO是否完整
+    if (glCheckNamedFramebufferStatus(FBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
-
-        // 创建纹理
-        glBindTexture(GL_TEXTURE_2D, textures[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // attach texture to framebuffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textures[i], 0);
-
-        // 创建渲染缓冲区
-        glBindRenderbuffer(GL_RENDERBUFFER, rbo[i]);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo[i]);
-
-        // 检查FBO是否完整
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        {
-            std::cout << "FBO is not complete !\n";
-            return 0;
-        }
+        std::cout << "FBO is not complete !\n";
+        return 0;
     }
-    // unbind
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     // uncomment this call to draw in wireframe polygons.
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     // make sure fbo can render proper size
     glViewport(0, 0, width, height);
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -195,20 +182,17 @@ int main()
             model = glm::mat4(1.0f);
 
         // step 1
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glBindVertexArray(cube.VAO);
         // set mvp
         fishEyeShader.use();
         fishEyeShader.setMat4("model", model);
         fishEyeShader.setMat4("projection", projection);
         // render
-        for (GLuint i = 0; i < 6; i++)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            fishEyeShader.setMat4("view", views[i]);
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        }
-
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        fishEyeShader.setMat4("view", views[0]);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        /*
         // step 2
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindVertexArray(quad.VAO);
@@ -235,21 +219,20 @@ int main()
         viewShader.setInt("texture5", 4);
         viewShader.setInt("texture6", 5);
         glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-
+        */
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    for (auto i = 0; i < 6; i++)
+    glBindTexture(GL_TEXTURE_CUBE_MAP, colorBuffer);
+    for (int i = 0; i < 6; i++)
     {
-        glBindTexture(GL_TEXTURE_2D, textures[i]);
         GLfloat *pixels = new GLfloat[width * height * 4];
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         std::string filename = std::string{"output"} + std::to_string(i) + ".png";
         stbi_write_png(filename.c_str(), width, height, 4, pixels, 0);
     }
-
     glfwTerminate();
     return 0;
 }
