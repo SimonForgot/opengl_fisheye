@@ -10,7 +10,7 @@ uniform samplerCube fisheye_cube;
 void main()
 {
     float len = length(TexCoords.xy);
-    float theta = M_PI * (1.0 - len);
+    float theta = M_PI * (1.0 - 1.0 * len);
     float phi = atan(TexCoords.y, TexCoords.x);
 
     float x = sin(theta) * cos(phi);

@@ -118,6 +118,11 @@ int main()
     glTextureStorage2D(colorBuffer, 1, GL_RGBA8, width, height); // one level, no mipmaps
     glNamedFramebufferTexture(FBO, GL_COLOR_ATTACHMENT0, colorBuffer, 0);
 
+    // anti edge line
+    glTextureParameteri(colorBuffer, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(colorBuffer, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(colorBuffer, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
     GLuint depthBuffer;
     glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &depthBuffer);
     glTextureStorage2D(depthBuffer, 1, GL_DEPTH24_STENCIL8, width, height);
