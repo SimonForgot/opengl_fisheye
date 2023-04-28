@@ -1,19 +1,13 @@
 #version 460 core
-
-in vec2 TexCoord;
 out vec4 FragColor;
 
-// texture sampler
-uniform sampler2D texture1;
-uniform sampler2D texture2;
-uniform sampler2D texture3;
-uniform sampler2D texture4;
-uniform sampler2D texture5;
-uniform sampler2D texture6;
+in vec3 TexCoords;
+
+uniform samplerCube fisheye_cube;
 
 void main()
 {
-    FragColor = (texture(texture1, TexCoord) + texture(texture2, TexCoord)+
-    texture(texture3, TexCoord) + texture(texture4, TexCoord)+
-    texture(texture5, TexCoord) + texture(texture6, TexCoord) )/6;
+    float r = length(TexCoords.xy);
+    if(r > 1.0f) FragColor = vec4(0.0f, 0.0f, 0.0f, 1.0);
+    else FragColor = texture(fisheye_cube, TexCoords);
 }

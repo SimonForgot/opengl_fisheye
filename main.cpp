@@ -13,6 +13,7 @@
 #include <learnopengl/shader.h>
 
 #include <vector>
+#include <array>
 #include <iostream>
 
 // settings
@@ -64,36 +65,25 @@ int main()
     {
         std::vector<GLfloat> vertices;
         std::vector<GLuint> indices;
-        std::vector<GLfloat> uvs; // for visualizing quad only
-        GLuint VAO, VBO[2], EBO;
-
+        GLuint VAO, VBO, EBO;
         void setupVAO()
         {
             // create
             glCreateVertexArrays(1, &VAO);
-            glCreateBuffers(2, VBO);
+            glCreateBuffers(1, &VBO);
             glCreateBuffers(1, &EBO);
             // move buffer data
-            glNamedBufferStorage(VBO[0], sizeof(GLfloat) * vertices.size(), vertices.data(), GL_DYNAMIC_STORAGE_BIT);
+            glNamedBufferStorage(VBO, sizeof(GLfloat) * vertices.size(), vertices.data(), GL_DYNAMIC_STORAGE_BIT);
             glNamedBufferStorage(EBO, sizeof(GLuint) * indices.size(), indices.data(), GL_DYNAMIC_STORAGE_BIT);
             vertices.clear();
             indices.clear();
             // how to interpret the data storage in buffer
-            glVertexArrayVertexBuffer(VAO, 0, VBO[0], 0, sizeof(GLfloat) * 3);
+            glVertexArrayVertexBuffer(VAO, 0, VBO, 0, sizeof(GLfloat) * 3);
             glVertexArrayElementBuffer(VAO, EBO);
             // specify how to fetch data from buffer to vertex shader
             glVertexArrayAttribFormat(VAO, 0, 3, GL_FLOAT, GL_FALSE, 0);
             glVertexArrayAttribBinding(VAO, 0, 0);
             glEnableVertexArrayAttrib(VAO, 0);
-            if (!uvs.empty())
-            {
-                glNamedBufferStorage(VBO[1], sizeof(GLfloat) * uvs.size(), uvs.data(), GL_DYNAMIC_STORAGE_BIT);
-                uvs.clear();
-                glVertexArrayVertexBuffer(VAO, 1, VBO[1], 0, sizeof(GLfloat) * 2);
-                glVertexArrayAttribFormat(VAO, 1, 2, GL_FLOAT, GL_FALSE, 0);
-                glVertexArrayAttribBinding(VAO, 1, 1);
-                glEnableVertexArrayAttrib(VAO, 1);
-            }
         }
     } cube, quad;
     cube.vertices = {0.5f, 0.5f, 0.5f,
@@ -115,11 +105,10 @@ int main()
                      -1.0f, -1.0f, 0.0f,
                      -1.0f, 1.0f, 0.0f};
     quad.indices = {0, 1, 3, 1, 2, 3};
-    quad.uvs = {1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
     cube.setupVAO();
     quad.setupVAO();
 
-    // 创建FBO
+    // FBO
     GLuint FBO;
     glCreateFramebuffers(1, &FBO);
 
@@ -134,7 +123,6 @@ int main()
     glTextureStorage2D(depthBuffer, 1, GL_DEPTH24_STENCIL8, width, height);
     glNamedFramebufferTexture(FBO, GL_DEPTH_ATTACHMENT, depthBuffer, 0);
 
-    // 检查FBO是否完整
     if (glCheckNamedFramebufferStatus(FBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         std::cout << "FBO is not complete !\n";
@@ -150,13 +138,15 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-    glm::mat4 views[] = {
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f)),  // front
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f)),   // back
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),   // up
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)), // down
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)),  // left
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f))};  // right
+    // https://stackoverflow.com/questions/11685608/convention-of-faces-in-opengl-cubemapping
+    std::vector<glm::mat4> views = {
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+    };
     glm::mat4 projection = glm::perspective(glm::radians(90.f), 1.0f, 0.1f, 100.0f);
 
     // render loop
@@ -187,52 +177,37 @@ int main()
         // set mvp
         fishEyeShader.use();
         fishEyeShader.setMat4("model", model);
+        fishEyeShader.setMat4s("views", views);
         fishEyeShader.setMat4("projection", projection);
         // render
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        fishEyeShader.setMat4("view", views[0]);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        /*
+
         // step 2
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindVertexArray(quad.VAO);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textures[1]);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, textures[2]);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, textures[3]);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, textures[4]);
-        glActiveTexture(GL_TEXTURE5);
-        glBindTexture(GL_TEXTURE_2D, textures[5]);
-
+        glBindTexture(GL_TEXTURE_CUBE_MAP, colorBuffer);
         viewShader.use();
-        viewShader.setInt("texture1", 0);
-        viewShader.setInt("texture2", 1);
-        viewShader.setInt("texture3", 2);
-        viewShader.setInt("texture4", 3);
-        viewShader.setInt("texture5", 4);
-        viewShader.setInt("texture6", 5);
-        glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-        */
+        viewShader.setInt("fisheye_cube", 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, colorBuffer);
-    for (int i = 0; i < 6; i++)
-    {
-        GLfloat *pixels = new GLfloat[width * height * 4];
-        glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        std::string filename = std::string{"output"} + std::to_string(i) + ".png";
-        stbi_write_png(filename.c_str(), width, height, 4, pixels, 0);
-    }
+    /*
+        glBindTexture(GL_TEXTURE_CUBE_MAP, colorBuffer);
+        for (int i = 0; i < 6; i++)
+        {
+            GLfloat *pixels = new GLfloat[width * height * 4];
+            glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+            std::string filename = std::string{"output"} + std::to_string(i) + ".png";
+            stbi_write_png(filename.c_str(), width, height, 4, pixels, 0);
+        }
+    */
     glfwTerminate();
     return 0;
 }
