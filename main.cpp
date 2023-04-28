@@ -35,7 +35,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(width, height, "LearnOpenGL", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(width, height, "Fisheye Demo", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -134,7 +134,7 @@ int main()
 
     // make sure fbo can render proper size
     glViewport(0, 0, width, height);
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
@@ -174,19 +174,16 @@ int main()
         // step 1
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glBindVertexArray(cube.VAO);
-        // set mvp
         fishEyeShader.use();
         fishEyeShader.setMat4("model", model);
         fishEyeShader.setMat4s("views", views);
         fishEyeShader.setMat4("projection", projection);
-        // render
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
         // step 2
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindVertexArray(quad.VAO);
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, colorBuffer);
         viewShader.use();
@@ -198,16 +195,6 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    /*
-        glBindTexture(GL_TEXTURE_CUBE_MAP, colorBuffer);
-        for (int i = 0; i < 6; i++)
-        {
-            GLfloat *pixels = new GLfloat[width * height * 4];
-            glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-            std::string filename = std::string{"output"} + std::to_string(i) + ".png";
-            stbi_write_png(filename.c_str(), width, height, 4, pixels, 0);
-        }
-    */
     glfwTerminate();
     return 0;
 }
