@@ -17,8 +17,8 @@
 #include <iostream>
 
 // settings
-const unsigned int width = 600;
-const unsigned int height = 600;
+const unsigned int width = 900;
+const unsigned int height = 900;
 
 int main()
 {
@@ -134,9 +134,6 @@ int main()
         return 0;
     }
 
-    // uncomment this call to draw in wireframe polygons.
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
     // make sure fbo can render proper size
     glViewport(0, 0, width, height);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -177,6 +174,7 @@ int main()
             model = glm::mat4(1.0f);
 
         // step 1
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glBindVertexArray(cube.VAO);
         fishEyeShader.use();
@@ -187,6 +185,8 @@ int main()
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
         // step 2
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glLineWidth(10.0f);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindVertexArray(quad.VAO);
         glActiveTexture(GL_TEXTURE0);
