@@ -11,7 +11,6 @@ project(${ProjectId} LANGUAGES CXX)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
-find_package(assimp REQUIRED)
 
 macro (ensure_dir_exist dir_name)
     if(NOT DEFINED ${dir_name})
@@ -22,8 +21,8 @@ endmacro ()
 ensure_dir_exist(GLAD)
 
 add_executable(${ProjectId} main.cpp )
-target_include_directories(${ProjectId} PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLAD}/include ./ ${ASSIMP_INCLUDE_DIRS})
-target_link_libraries(${ProjectId} ${OPENGL_LIBRARIES} glfw ${GLAD}/lib/libglad.a glm::glm ${ASSIMP_LIBRARY_DIRS}/libassimp.so)
+target_include_directories(${ProjectId} PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLAD}/include ./)
+target_link_libraries(${ProjectId} ${OPENGL_LIBRARIES} glfw ${GLAD}/lib/libglad.a glm::glm)
 
 add_custom_target(run COMMAND $<TARGET_FILE:${ProjectId}>)
 
