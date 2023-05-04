@@ -174,7 +174,8 @@ int main()
             model = glm::mat4(1.0f);
 
         // step 1
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // glLineWidth(7.0f);
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glBindVertexArray(cube.VAO);
         fishEyeShader.use();
@@ -186,7 +187,6 @@ int main()
 
         // step 2
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glLineWidth(10.0f);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindVertexArray(quad.VAO);
         glActiveTexture(GL_TEXTURE0);
