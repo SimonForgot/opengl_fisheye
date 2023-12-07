@@ -22,7 +22,12 @@ ensure_dir_exist(GLAD)
 
 add_executable(${ProjectId} main.cpp )
 target_include_directories(${ProjectId} PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLAD}/include ./)
-target_link_libraries(${ProjectId} ${OPENGL_LIBRARIES} glfw ${GLAD}/lib/libglad.a glm::glm)
+
+set(WINDOWS_FILE $<$<PLATFORM_ID:Windows>:glad.lib>)
+set(LINUX_FILE $<$<PLATFORM_ID:Linux>:libglad.a>)
+
+target_link_directories(${ProjectId} PRIVATE ${GLAD}/lib)
+target_link_libraries(${ProjectId} ${OPENGL_LIBRARIES} glfw glad glm::glm)
 
 add_custom_target(run COMMAND $<TARGET_FILE:${ProjectId}>)
 
